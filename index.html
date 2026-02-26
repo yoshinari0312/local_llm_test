@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ローカルLLM テスト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤖 ローカルLLM チャット</h1>
+      <p class="subtitle">Ollama (qwen2.5:7b) テストアプリ</p>
+    </header>
+
+    <!-- システムプロンプト設定 -->
+    <div class="system-prompt-section">
+      <label for="system-prompt">システムプロンプト:</label>
+      <textarea id="system-prompt" rows="3">あなたは丁寧な日本語で答えるアシスタントです。</textarea>
+    </div>
+
+    <!-- チャットエリア -->
+    <div class="chat-container" id="chat-container">
+      <div class="welcome-message">
+        <p>👋 こんにちは！メッセージを入力して会話を始めましょう。</p>
+      </div>
+    </div>
+
+    <!-- 入力エリア -->
+    <div class="input-section">
+      <textarea 
+        id="user-input" 
+        placeholder="メッセージを入力... (Shift+Enter で改行、Enter で送信)"
+        rows="2"
+      ></textarea>
+      <button id="send-btn" onclick="sendMessage()">
+        <span class="btn-text">送信</span>
+        <span class="btn-loading" style="display: none;">⏳</span>
+      </button>
+      <button id="clear-btn" onclick="clearChat()">クリア</button>
+    </div>
+
+    <!-- ステータス表示 -->
+    <div class="status-bar">
+      <span id="status">準備完了</span>
+      <span id="connection-status" class="connected">● 接続中</span>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
