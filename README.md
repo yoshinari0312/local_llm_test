@@ -2,6 +2,12 @@
 
 Ollama で動作するローカルLLM（qwen2.5:7b）をブラウザから呼び出すテストWebアプリです。
 
+このリポジトリは、LAN利用を想定して**同一PC上のプロキシ経由**で Ollama を呼ぶ構成に対応しています。
+- ブラウザ → Webサーバー（このアプリ）
+- Webサーバー → Ollama（`127.0.0.1:11434`）
+
+これにより、クライアント端末のブラウザから Ollama を直接叩かないため、CORS 設定に依存せず運用しやすくなります。
+
 ## 機能
 
 - 💬 チャット形式のUI
@@ -13,7 +19,7 @@ Ollama で動作するローカルLLM（qwen2.5:7b）をブラウザから呼び
 
 - [Ollama](https://ollama.com/) がインストール済みであること
 - `qwen2.5:7b` モデルがダウンロード済みであること
-- Python 3.x（HTTPサーバー用）
+- Python 3.x（Webサーバー用）
 
 ### モデルのダウンロード（未ダウンロードの場合）
 
@@ -23,65 +29,54 @@ ollama pull qwen2.5:7b
 
 ## セットアップ
 
-### 1. OLLAMA_ORIGINS 環境変数の設定
-
-ブラウザからOllama APIにアクセスするため、CORSを許可する必要があります。
-
-#### macOS の場合
-
-```bash
-# 環境変数を設定
-launchctl setenv OLLAMA_ORIGINS "http://localhost:8080"
-
-# Ollamaアプリを再起動（メニューバーのアイコンから Quit → 再度起動）
-# または以下のコマンドで再起動
-pkill ollama && ollama serve
-```
-
-#### Linux の場合
-
-```bash
-# systemdでOllamaを管理している場合
-sudo systemctl edit ollama.service
-
-# 以下を追加
-[Service]
-Environment="OLLAMA_ORIGINS=http://localhost:8080"
-
-# サービスを再起動
-sudo systemctl daemon-reload
-sudo systemctl restart ollama
-```
-
-#### Windows の場合
-
-システム環境変数に `OLLAMA_ORIGINS` を追加し、値を `http://localhost:8080` に設定後、Ollamaを再起動してください。
-
-### 2. Ollamaが起動していることを確認
+### 1. Ollamaが起動していることを確認
 
 ```bash
 # Ollamaのステータス確認
 curl http://127.0.0.1:11434/api/tags
 ```
 
-## 実行方法
-
-### 1. HTTPサーバーを起動
+### 2. Webサーバー（プロキシ付き）を起動
 
 ```bash
 cd /path/to/local_llm_test
-python3 -m http.server 8080
+python3 server.py
 ```
 
-### 2. ブラウザでアクセス
+既定値:
+- Web待受: `0.0.0.0:8080`
+- Ollama接続先: `http://127.0.0.1:11434`
 
-http://localhost:8080 を開く
+必要に応じて環境変数で変更できます。
+
+```bash
+HOST=0.0.0.0 PORT=8080 OLLAMA_BASE_URL=http://127.0.0.1:11434 python3 server.py
+```
+
+## アクセス方法
+
+### 同一PCから
+
+`http://localhost:8080`
+
+### 同一LAN内の別端末から
+
+`http://<このPCのIPアドレス>:8080`
+
+例: `http://192.168.1.50:8080`
+
+IP確認例（macOS）:
+
+```bash
+ipconfig getifaddr en0
+```
+
+※ Wi-Fi 以外のIFを使っている場合は `en1` などに読み替え。
 
 ## 使い方
 
 1. **システムプロンプト**（上部）: LLMの振る舞いを設定できます
    - デフォルト: 「あなたは丁寧な日本語で答えるアシスタントです。」
-   
 2. **メッセージ入力**（下部）: 質問やメッセージを入力
    - `Enter`: 送信
    - `Shift + Enter`: 改行
@@ -95,11 +90,12 @@ http://localhost:8080 を開く
 - Ollamaが起動しているか確認してください
 - `curl http://127.0.0.1:11434/api/tags` でレスポンスがあるか確認
 
-### CORSエラーが発生する
+### LAN内の別端末から開けない
 
-- `OLLAMA_ORIGINS` 環境変数が正しく設定されているか確認
-- Ollamaを再起動したか確認
-- すべてのオリジンを許可する場合: `OLLAMA_ORIGINS="*"`
+- `server.py` が起動中か確認
+- サーバー起動ホストが `0.0.0.0` になっているか確認
+- macOSのファイアウォールで `python3` の受信許可を確認
+- 同一セグメント（例: `192.168.1.x`）に端末がいるか確認
 
 ### モデルが見つからない
 
@@ -118,16 +114,22 @@ local_llm_test/
 ├── index.html   # メインHTML
 ├── style.css    # スタイルシート
 ├── app.js       # Ollama API呼び出しロジック
+├── server.py    # 静的配信 + Ollamaプロキシ
 └── README.md    # このファイル
 ```
 
 ## API設定の変更
 
-別のモデルを使用する場合は、`app.js` の以下の部分を変更してください：
+別のモデルを使用する場合は、`app.js` の以下を変更してください：
 
 ```javascript
-const OLLAMA_API_URL = 'http://127.0.0.1:11434/api/chat';
-const MODEL_NAME = 'qwen2.5:7b';  // ← 使用するモデル名に変更
+const MODEL_NAME = "qwen2.5:7b"; // ← 使用するモデル名に変更
+```
+
+Ollama の接続先変更は、`server.py` 側の環境変数で行います：
+
+```bash
+OLLAMA_BASE_URL=http://127.0.0.1:11434 python3 server.py
 ```
 
 ## ライセンス

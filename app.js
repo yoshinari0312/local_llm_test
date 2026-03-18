@@ -1,5 +1,6 @@
-// Ollama API設定
-const OLLAMA_API_URL = 'http://127.0.0.1:11434/api/chat';
+// API設定（同一オリジン配下のプロキシAPIを利用）
+const CHAT_API_URL = '/api/chat';
+const TAGS_API_URL = '/api/tags';
 const MODEL_NAME = 'qwen2.5:7b';
 
 // 会話履歴（メモリ上のみ）
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Ollama接続確認
 async function checkConnection() {
   try {
-    const response = await fetch('http://127.0.0.1:11434/api/tags');
+    const response = await fetch(TAGS_API_URL);
     if (response.ok) {
       connectionStatusEl.textContent = '● 接続中';
       connectionStatusEl.className = 'connected';
@@ -92,7 +93,7 @@ async function sendMessage() {
     messages.push(...conversationHistory);
 
     // Ollama APIにストリーミングリクエスト
-    const response = await fetch(OLLAMA_API_URL, {
+    const response = await fetch(CHAT_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -145,7 +146,7 @@ async function sendMessage() {
 
   } catch (error) {
     console.error('API呼び出しエラー:', error);
-    fullResponse = `⚠️ エラーが発生しました: ${error.message}\n\nOllamaが起動しているか確認してください。\nまた、OLLAMA_ORIGINS環境変数の設定が必要な場合があります。`;
+    fullResponse = `⚠️ エラーが発生しました: ${error.message}\n\nOllamaが起動しているか確認してください。`;
     contentEl.firstChild.textContent = fullResponse;
     updateStatus('エラー');
     connectionStatusEl.textContent = '● 未接続';
